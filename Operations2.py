@@ -3,7 +3,7 @@ from tkinter import *
 import copy
 import Vending_Machine
 
-"""Klasa zawierajaca operacje operacje obslugujace interfejs"""
+"""Klasa zawierajaca operacje obslugujace interfejs"""
 class Operations(Vending_Machine.Machine):
 
     flag = 0
