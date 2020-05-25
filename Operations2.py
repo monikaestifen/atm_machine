@@ -1,15 +1,20 @@
-import time
-from tkinter import *
+"""Klasa zawierajaca operacje obslugujace interfejs"""
+
 import copy
-import Vending_Machine
+import time
+from tkinter import FALSE
+from tkinter import getdouble
+from tkinter import StringVar
+from Vending_Machine import Machine
 
-"""Klasa zawierajaca operacje operacje obslugujace interfejs"""
-class Operations(Vending_Machine.Machine):
-
+class Operations(Machine):
+    """Pobieranie wartosci wprowadzanych przez interfejs"""
     flag = 0
 
     def __init__(self, master):
-        super(Vending_Machine.Machine).__init__()
+
+        super(Operations, self).__init__()
+        self.ok_clicked = False
         self.master = master
         self.input1 = 0
         self.input2 = 0
@@ -17,34 +22,38 @@ class Operations(Vending_Machine.Machine):
         self.input_text1.set(self.input1)
         self.input_coinn = StringVar()
         self.input_coinn.set(self.input2)
-        coinn = ''
-        numberr = ''
         chosen_noo = 0
-        self.coin = coinn
-        self.number = numberr
+        self.coin = ""
+        self.number = ""
         self.chosen_no = chosen_noo
         self.price = 0
         self.price1 = 0
+        self.exit = False
 
-    """Funkcja obslugujaca wprowadzanie numerow produktow."""
-    """Jesli produkt jest na stanie, wyprowadza jego cene na ekran, lub  jesli wprowadzony zostal bledny numer, wyprowadzi informacji o braku dostepnosci."""
     def but_click(self, item):
+        """
+        Jesli produkt jest na stanie, wyprowadza jego cene na ekran,
+        lub  jesli wprowadzony zostal bledny numer, wyprowadzi informacji o braku dostepnosci.
+        """
+
         self.number = self.number + str(item)
         self.input_text1.set(self.number)
 
         if len(self.number) > 1:
             expression2 = copy.copy(self.number)
-            self.input_text1.set(
-                "cena:  " + str(Vending_Machine.Machine().zwroc_cene(int(expression2))))  # info ile do zaplaty
+            # info ile do zaplaty
+
+            self.master.after(1000, lambda: self.input_text1.set(
+                "cena:  " + str(Machine().zwroc_cene(int(expression2)))))
 
             if int(self.number) < 30 or int(self.number) > 50:
                 time.sleep(1.00)
                 self.input_text1.set("wybierz nr od 30 do 50!")
-                # self.input_text1.set('')
-            self.chosen_no = copy.deepcopy(self.number)  # zwrca kopie numeru wybranego
-            ##sprawdzam czy produkt jest w slowniku
 
-            if (Vending_Machine.Machine().update_availability(self.number)) == FALSE:
+            self.chosen_no = copy.deepcopy(self.number)  # zwrca kopie numeru wybranego
+            # sprawdzam czy produkt jest w slowniku
+
+            if (Machine().update_availability(self.number)) == FALSE:
                 self.input_text1.set("produkt niedostepny")
                 self.flag = 1
                 # clear fun
@@ -52,78 +61,103 @@ class Operations(Vending_Machine.Machine):
 
             self.number = ""
 
-
-    def get_but_click(self) -> object:  # wiemy jaki nr został wpisany
+    def get_but_click(self) -> object:
+        """Zwraca wybrany przez uzytkownika numer produktu"""
         return self.chosen_no
 
-    """Funkcja wyswietla informacje po wprowadzeniu monety, ile jescze trzeba doplacic aby zakupic produkt."""
     def coin_click(self, which_coin):
-        self.coin = getdouble(which_coin)
-        self.input_coinn.set(self.coin)  # wyswietla na ekranie wrzycona monete
+        """Po wprowadzeniu monety, ile jescze trzeba doplacic aby zakupic produkt."""
 
-        entered_no = int(float(self.get_but_click()))  # dziala jednorazowo
-        self.price = round(self.price, 2)
-        ##
-        if not self.price:
-            self.price = Vending_Machine.Machine().zwroc_cene(entered_no)
-            self.price = self.price - self.coin
+        if self.ok_clicked:
 
-            if self.price > 0:
-                self.input_coinn.set("brakuje : " + str(abs(round(self.price,2))))
+            if not self.exit:
 
-            elif self.price < 0:
-                self.clear_coin_window()
-                listC = (Vending_Machine.Machine().dpMakeChange(abs(self.price)))
-                self.input_coinn.set("wydaje reszte: " + str(listC))
-                time.sleep(4.00)
+                self.coin = getdouble(which_coin)
+                self.input_coinn.set(self.coin)  # wyswietla na ekranie wrzycona monete
 
-            else:
-                time.sleep(1.00)
-                self.input_coinn.set("prosze odebrac pordukt")
+                entered_no = int(float(self.get_but_click()))  # dziala jednorazowo
+                self.price = round(self.price, 2)
+
+                if not self.price:
+
+                    self.price = Machine().zwroc_cene(entered_no)
+                    self.price = self.price - self.coin
+
+                    if self.price > 0:
+                        self.input_coinn.set("brakuje : " + str(abs(round(self.price, 2))))
+
+                    elif self.price < 0:
+                        self.clear_coin_window()
+                        coin_list = (Machine().make_change(abs(self.price)))
+                        self.input_coinn.set("wydaje reszte: " + str(coin_list))
+                        self.exit = True
+                        self.ok_clicked = False
+                        self.master.after(5000, lambda: self.clear_all())
+
+                    else:
+                        time.sleep(1.00)
+                        self.input_coinn.set("prosze odebrac pordukt")
+                        self.exit = True
+                        self.ok_clicked = False
+                        self.master.after(5000, lambda: self.clear_all())
+
+                else:
+                    self.price = self.price - self.coin
+                    self.input_coinn.set("")
+                    if self.price > 0:
+                        self.input_coinn.set("brakuje : " + str(abs(round(self.price, 2))))
+
+                    elif self.price < 0:
+                        self.clear_coin_window()
+                        coin_list = (Machine().make_change(abs(self.price)))
+                        self.input_coinn.set("wydaje reszte : " + str(coin_list))
+                        self.exit = True
+                        self.ok_clicked = False
+                        self.master.after(5000, lambda: self.clear_all())
+
+                    else:
+                        time.sleep(1.00)
+                        self.input_coinn.set("prosze odebrac pordukt")
+                        self.exit = True
+                        self.ok_clicked = False
+                        self.master.after(5000, lambda: self.clear_all())
+
 
         else:
-            self.price = self.price - self.coin
-            self.input_coinn.set("")
-            if self.price > 0:
-                self.input_coinn.set("brakuje : " + str(abs(round(self.price,2))))
-
-            elif self.price < 0:
-                self.clear_coin_window()
-                listC = (Vending_Machine.Machine().dpMakeChange(abs(self.price)))
-                self.input_coinn.set("wydaje reszte : " + str(listC))
-
-            else:
-                time.sleep(1.00)
-                self.input_coinn.set("prosze odebrac pordukt")
+            self.input_coinn.set("zatwierdz operacje")
 
     def clear_coin_window(self):
+        """Czysci okno gdzie mamy monety."""
         self.input_coinn.set("")
 
     def clear_all(self):
-        time.sleep(2.00)
+        """Czysci okna."""
         self.number = ""
         self.input_text1.set("")
-        self.price = ""
+        self.price = 0
         self.input_coinn.set("")
 
     def ok_fun(self, item):
+        """Funkcja uruchamiana po zatwierdzeniu operacji guzikiem 'OK'. """
         if item == 'OK':
+            self.ok_clicked = True
+            self.exit = False
             time.sleep(1.00)
             self.input_text1.set("wrzuc pieniadze")
             if self.flag == 1:
                 self.input_text1.set("wybierz inny produkt")
 
-    """Funkcja uruchamiana po nacisnieciu guzika 'C'. """
     def cancel_fun(self, item):
+        """Funkcja uruchamiana po nacisnieciu guzika 'C'. """
+
         if item == 'C':
             self.number = ""
             self.input_text1.set("")
 
-    """Funkcja uruchamiana po nacisnieciu guzika 'STOP'."""
     def stop(self, item):
+        """Funkcja uruchamiana po nacisnieciu guzika 'STOP'."""
         if item == 'STOP':
             self.number = ""
             self.input_text1.set("")
             self.price = ""
             self.input_coinn.set("")
-
