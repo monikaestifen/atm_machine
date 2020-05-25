@@ -1,8 +1,11 @@
-n = 5
-coinsCount = [n] * 8
-
 """Klasa zawiera funkcje aktualizujace stan produktow w maszynie"""
+
+N = 5
+COINS_COUNT = [N] * 8
+
+
 class Machine:
+    """Klasa zawiera informacje dot. produktow. """
     dic = [
         {"code": 30, "price": 2.00, "quantity": 5},
         {"code": 31, "price": 2.50, "quantity": 5},
@@ -28,77 +31,71 @@ class Machine:
     ]
 
     def __init__(self):
-
         self.price = 0
         self.change = 0
-        self.coinsUsed = [0] * (self.change + 1)
+        self.coins_used = [0] * (self.change + 1)
 
-    def product(self):
-        for item in self.dic:
-            cena = item['price']
-            print(cena)
-
-    """funkcja zwracajaca cene nacisnietego produktu z dict."""
     def zwroc_cene(self, number):
+        """funkcja zwracajaca cene nacisnietego produktu z dict."""
+        return_price = 0
         for item in self.dic:
-            no = item['code']
+            code_no = item['code']
             self.price = item['price']
-            if no == float(number):
+            if code_no == float(number):
                 print(str(self.price))
                 print(type(self.price))
-                return float(self.price)
+                return_price = float(self.price)
+
+        return return_price
 
     def get_price(self):
         return int(self.price)
 
-    """po wybraniu produktu aktualizujemy stan produktow."""
     def update_availability(self, number):
+        """po wybraniu produktu aktualizujemy stan produktow."""
+        state = False
         for item in self.dic:
-            no = item['code']
+            code_no = item['code']
             quantity = item['quantity']
-            if no == float(number):
+            if code_no == float(number):
                 if quantity != 0:
-                    print("produkt dostepny")
                     item['quantity'] = quantity - 1
-                    return True
+                    state = True
                 else:
-                    print("produkt niedostepny")
-                    return False
+                    state = False
+        return state
 
+    def make_change(self, change):
+        """Funkcja obliczajaca wydana reszte."""
+        global N
+        global COINS_COUNT
 
-    """Funkcja obliczajaca wydana reszte."""
-    def dpMakeChange(self, change):
-        global n
-        global coinsCount
-
-        coinValueList = [1, 2, 5, 10, 20, 50, 100, 200, 500]
+        coin_value_list = [1, 2, 5, 10, 20, 50, 100, 200, 500]
         change = change * 100
         change = int(change)
-        coinsUsed = [0] * (change + 1)
-        minCoins = [0] * (change + 1)
+        coins_used = [0] * (change + 1)
+        min_coins = [0] * (change + 1)
 
         for cents in range(change + 1):
-            coinCount = cents
-            newCoin = 1
-            for j in [c for c in coinValueList if c <= cents]:
-                if minCoins[cents - j] + 1 < coinCount:
-                    coinCount = minCoins[cents - j] + 1
-                    newCoin = j
-            minCoins[cents] = coinCount
-            coinsUsed[cents] = newCoin
+            coin_count = cents
+            new_coin = 1
+            for j in [c for c in coin_value_list if c <= cents]:
+                if min_coins[cents - j] + 1 < coin_count:
+                    coin_count = min_coins[cents - j] + 1
+                    new_coin = j
+            min_coins[cents] = coin_count
+            coins_used[cents] = new_coin
 
         coin = change
-        coinList = []
+        coin_list = []
         while coin > 0:
-            thisCoin = coinsUsed[coin]
-            index = coinValueList.index(thisCoin)
-            if coinsCount[index] > 0:
-                coinList.append(thisCoin / 100)
-                coin = coin - thisCoin
-                coinsCount[index] = coinsCount[index] - 1
+            this_coin = coins_used[coin]
+            index = coin_value_list.index(this_coin)
+            if COINS_COUNT[index] > 0:
+                coin_list.append(this_coin / 100)
+                coin = coin - this_coin
+                COINS_COUNT[index] = COINS_COUNT[index] - 1
             else:
                 print("prosze wrzucic odliczona kwote")
                 break
-        #print("change", change)
-        return coinList
-
+        return coin_list
