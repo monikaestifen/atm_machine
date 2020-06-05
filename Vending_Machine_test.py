@@ -19,5 +19,6 @@ class MyTestCase(unittest.TestCase):
 
         self.assertListEqual(Machine().dpMakeChange(3.5), self.expectedChange)
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,128 +1,133 @@
 """Klasa zawierajaca operacje obslugujace interfejs"""
 
 import copy
+import some_exceptions as exceptions
 import time
-from tkinter import FALSE
-from tkinter import getdouble
+from tkinter import messagebox
 from tkinter import StringVar
-from Vending_Machine import Machine
+from tkinter import getdouble
+from projekt.Vending_Machine import Machine
+
 
 class Operations(Machine):
     """Pobieranie wartosci wprowadzanych przez interfejs"""
-    flag = 0
+    flag = True
 
     def __init__(self, master):
 
-        super(Operations, self).__init__()
-        self.ok_clicked = False
-        self.master = master
-        self.input1 = 0
-        self.input2 = 0
+        super().__init__()
+        self.__ok_clicked = False
+        self.__master = master
         self.input_text1 = StringVar()
-        self.input_text1.set(self.input1)
+        self.input_text1.set(0)
         self.input_coinn = StringVar()
-        self.input_coinn.set(self.input2)
-        chosen_noo = 0
-        self.coin = ""
-        self.number = ""
-        self.chosen_no = chosen_noo
-        self.price = 0
-        self.price1 = 0
-        self.exit = False
+        self.input_coinn.set(0)
+        self.__coin = ""
+        self.__number = ""
+        self.__chosen_no = 0
+        self.__price = 0
+        self.__exit = False
+        self.__input_length = 0
+        self.__thrown_exception = False
 
-    def but_click(self, item):
+    def button_click(self, item):
         """
         Jesli produkt jest na stanie, wyprowadza jego cene na ekran,
         lub  jesli wprowadzony zostal bledny numer, wyprowadzi informacji o braku dostepnosci.
         """
 
-        self.number = self.number + str(item)
-        self.input_text1.set(self.number)
+        self.__number = self.__number + str(item)
+        self.input_text1.set(self.__number)
+        self.__input_length = len(self.__number)
 
-        if len(self.number) > 1:
-            expression2 = copy.copy(self.number)
+        if self.__input_length > 1:
+            expression2 = copy.copy(self.__number)
             # info ile do zaplaty
 
-            self.master.after(1000, lambda: self.input_text1.set(
+            self.__master.after(1000, lambda: self.input_text1.set(
                 "cena:  " + str(Machine().zwroc_cene(int(expression2)))))
 
-            if int(self.number) < 30 or int(self.number) > 50:
+            if int(self.__number) < 30 or int(self.__number) > 50:
                 time.sleep(1.00)
-                self.input_text1.set("wybierz nr od 30 do 50!")
+                self.clear_all()
+                raise exceptions.InputError
 
-            self.chosen_no = copy.deepcopy(self.number)  # zwrca kopie numeru wybranego
+            self.__chosen_no = copy.deepcopy(self.__number)  # zwrca kopie numeru wybranego
             # sprawdzam czy produkt jest w slowniku
 
-            if (Machine().update_availability(self.number)) == FALSE:
+            if not (Machine().update_availability(self.__number)):
                 self.input_text1.set("produkt niedostepny")
-                self.flag = 1
+                self.flag = False
                 # clear fun
                 self.clear_all()
+                raise exceptions.LackOfProduct
 
-            self.number = ""
+            self.__number = ""
 
-    def get_but_click(self) -> object:
+    def get_button_click(self) -> object:
         """Zwraca wybrany przez uzytkownika numer produktu"""
-        return self.chosen_no
+        return self.__chosen_no
 
     def coin_click(self, which_coin):
         """Po wprowadzeniu monety, ile jescze trzeba doplacic aby zakupic produkt."""
 
-        if self.ok_clicked:
+        entered_no = int(float(self.get_button_click()))  # dziala jednorazowo
+        self.__coin = getdouble(which_coin)
+        self.input_coinn.set(self.__coin)  # wyswietla na ekranie wrzucona monete
 
-            if not self.exit:
+        if self.__ok_clicked:
+            print(self.__ok_clicked)
 
-                self.coin = getdouble(which_coin)
-                self.input_coinn.set(self.coin)  # wyswietla na ekranie wrzycona monete
+            if not self.__exit:  # jesli jeszcze nie zakonczyl operacji -> czyli jeszcze brakuje pieniedzy
 
-                entered_no = int(float(self.get_but_click()))  # dziala jednorazowo
-                self.price = round(self.price, 2)
+                if self.__price is 0:
+                    self.__price = round(Machine().zwroc_cene(entered_no), 2)
 
-                if not self.price:
+                self.__price = round(self.__price - self.__coin, 2)
+                print(self.__price, self.__coin)
 
-                    self.price = Machine().zwroc_cene(entered_no)
-                    self.price = self.price - self.coin
+                if not self.__thrown_exception:
 
-                    if self.price > 0:
-                        self.input_coinn.set("brakuje : " + str(abs(round(self.price, 2))))
+                    if self.__price > 0:
+                        self.input_coinn.set("brakuje : " + str(abs(round(self.__price, 2))))
 
-                    elif self.price < 0:
-                        self.clear_coin_window()
-                        coin_list = (Machine().make_change(abs(self.price)))
-                        self.input_coinn.set("wydaje reszte: " + str(coin_list))
-                        self.exit = True
-                        self.ok_clicked = False
-                        self.master.after(5000, lambda: self.clear_all())
+                    elif self.__price < 0:
+                        try:
+                            self.clear_coin_window()
+                            coin_list = (Machine().make_change(abs(self.__price)))
+                            self.input_coinn.set("wydaje reszte: " + str(coin_list))
+                            self.__exit = True
+                            self.__ok_clicked = False
+                            self.__master.after(1000, lambda: self.clear_all())
 
-                    else:
+                        except exceptions.NoMoneyToMakeChange:
+                            print("tylko odliczona kwota")
+                            self.__thrown_exception = True
+                            self.clear_all()
+
+                            messagebox.showerror("Error", "Prosze wprowadzic odliczona kwote.")
+
+                    elif self.__price == 0:
                         time.sleep(1.00)
                         self.input_coinn.set("prosze odebrac pordukt")
-                        self.exit = True
-                        self.ok_clicked = False
-                        self.master.after(5000, lambda: self.clear_all())
+                        self.__exit = True
+                        self.__ok_clicked = False
+                        self.__master.after(1000, lambda: self.clear_all())
 
                 else:
-                    self.price = self.price - self.coin
-                    self.input_coinn.set("")
-                    if self.price > 0:
-                        self.input_coinn.set("brakuje : " + str(abs(round(self.price, 2))))
-
-                    elif self.price < 0:
-                        self.clear_coin_window()
-                        coin_list = (Machine().make_change(abs(self.price)))
-                        self.input_coinn.set("wydaje reszte : " + str(coin_list))
-                        self.exit = True
-                        self.ok_clicked = False
-                        self.master.after(5000, lambda: self.clear_all())
-
-                    else:
+                    if self.__price > 0:
+                        self.input_coinn.set("brakuje : " + str(abs(round(self.__price, 2))))
+                    elif self.__price == 0:
                         time.sleep(1.00)
                         self.input_coinn.set("prosze odebrac pordukt")
-                        self.exit = True
-                        self.ok_clicked = False
-                        self.master.after(5000, lambda: self.clear_all())
-
-
+                        self.__exit = True
+                        self.__ok_clicked = False
+                        self.__master.after(1000, lambda: self.clear_all())
+                    elif self.__price < 0:
+                        self.__ok_clicked = False
+                        self.input_coinn.set("tylko odliczona kwota")
+                        self.__master.after(1000, lambda: self.clear_all())
+                        raise exceptions.NoMoneyToMakeChange
         else:
             self.input_coinn.set("zatwierdz operacje")
 
@@ -132,32 +137,38 @@ class Operations(Machine):
 
     def clear_all(self):
         """Czysci okna."""
-        self.number = ""
+        self.__number = ""
         self.input_text1.set("")
-        self.price = 0
+        self.__price = 0
         self.input_coinn.set("")
 
-    def ok_fun(self, item):
+    def ok_function(self, item):
         """Funkcja uruchamiana po zatwierdzeniu operacji guzikiem 'OK'. """
+        self.__ok_clicked = True
+
         if item == 'OK':
-            self.ok_clicked = True
-            self.exit = False
+            if self.__input_length < 2:
+                self.clear_all()
+                raise exceptions.InputError
+
+            self.__exit = False
+            self.__exit2 = True
             time.sleep(1.00)
             self.input_text1.set("wrzuc pieniadze")
-            if self.flag == 1:
+            if not self.flag:
                 self.input_text1.set("wybierz inny produkt")
 
-    def cancel_fun(self, item):
+    def cancel_function(self, item):
         """Funkcja uruchamiana po nacisnieciu guzika 'C'. """
 
         if item == 'C':
-            self.number = ""
+            self.__number = ""
             self.input_text1.set("")
 
     def stop(self, item):
         """Funkcja uruchamiana po nacisnieciu guzika 'STOP'."""
         if item == 'STOP':
-            self.number = ""
+            self.__number = ""
             self.input_text1.set("")
-            self.price = ""
+            self.__price = ""
             self.input_coinn.set("")
