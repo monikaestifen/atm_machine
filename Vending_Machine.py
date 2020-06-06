@@ -7,6 +7,12 @@ COINS_COUNT = [N] * 8
 COIN_VALUE_LIST = [1, 2, 5, 10, 20, 50, 100, 200, 500]
 
 
+def check_if_number_exists(number):
+    """Sprawdza czy istnieje produkt o kodzie wprowadzonym przez uzytkownika"""
+    if int(number) < 30 or int(number) > 50:
+        raise exceptions.InputError
+
+
 class Machine:
     """Klasa zawiera informacje dot. produktow. """
     AUTOMAT = [
@@ -30,7 +36,7 @@ class Machine:
         {"code": 47, "price": 4.25, "quantity": 5},
         {"code": 48, "price": 3.05, "quantity": 5},
         {"code": 49, "price": 6.10, "quantity": 5},
-        {"code": 50, "price": 4.40, "quantity": 5}
+        {"code": 50, "price": 1.0, "quantity": 5}
     ]
 
     def __init__(self):
@@ -38,6 +44,7 @@ class Machine:
         self.change = 0
         self.coins_used = [0] * (self.change + 1)
         self.able_to_make_change = True
+        self.coin_list_sum = 0
 
     def zwroc_cene(self, number):
         """funkcja zwracajaca cene nacisnietego produktu z AUTOMATU."""
@@ -51,6 +58,7 @@ class Machine:
 
     def update_availability(self, number):
         """po wybraniu produktu aktualizujemy stan produktow."""
+
         state = False
         for item in self.AUTOMAT:
             code_no = item['code']
@@ -61,13 +69,16 @@ class Machine:
                     state = True
                 else:
                     state = False
+                    print("test funkcji --> brak towaru")
         return state
 
     def able_to_change_money(self):
+        """Sprawdza czy jest mozliwe wydac reszte"""
         return self.able_to_make_change
 
     def make_change(self, change):
         """Funkcja obliczajaca wydana reszte."""
+
         global N
         global COINS_COUNT
 
@@ -105,5 +116,5 @@ class Machine:
                 raise exceptions.NoMoneyToMakeChange
                 break
 
+        self.coin_list_sum = sum(coin_list)
         return coin_list
-
